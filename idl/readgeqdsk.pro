@@ -1,30 +1,15 @@
-function interpB,  bStruct, rPos, zPos
-
-    bRHere  = interpolate ( bStruct.bR, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
-        ( zPos - min ( bStruct.z ) ) / bStruct.zdim * (bStruct.nH-1.0), cubic = -0.5 )
-    bPhiHere  = interpolate ( bStruct.bPhi, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
-        ( zPos - min ( bStruct.z ) ) / bStruct.zdim * (bStruct.nH-1.0), cubic = -0.5 )
-    bzHere  = interpolate ( bStruct.bz, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
-        ( zPos - min ( bStruct.z ) ) / bStruct.zdim * (bStruct.nH-1.0), cubic = -0.5 )
-    
-    bMag    = sqrt ( bRHere^2 + bPhiHere^2 + bzHere^2 )
-
-    bOut    = { bR : bRHere, $
-                bPhi :bPhiHere, $
-                bz : bzHere, $
-                bMag : bMag }
-
-    return, bOut
-
-end 
-
 function readGeqdsk, fileName, $
 	plot_ = plot_, $
 	pAngle = pAngle, $
 	half = half, $
 	reWrite = reWrite, $
 	bFactor = bFactor, $
-	bPolFactor = bPolFactor
+	bPolFactor = bPolFactor, $
+	cMod_lim_adjust = cMod_lim_adjust, $
+	bInterpS = bInterpS, $
+	fieldLineIn = fieldLineIn, $
+	fieldLineOut = fieldLineOut, $
+	use_dlg_bField = use_dlg_bField
 
     @constants
 
@@ -98,7 +83,18 @@ if keyword_set ( bPolFactor ) then begin
 
 endif
 
+if keyword_set ( cMod_lim_adjust ) then begin
 
+	rLim[where(rlim gt 0.82 and zlim gt 0.22)]=0.82
+	rLim[where(rlim gt 0.82 and zlim lt -0.22)]=0.82
+	rLim[where(zLim lt -0.5)]=0.6
+	zLim[where(zLim lt -0.5)]=-0.5
+
+	lim[0,*]   = rlim
+	lim[1,*]   = zlim
+
+
+endif
 
 if keyword_set ( reWrite ) then begin
 
@@ -198,14 +194,6 @@ endfor
 iiInside    = where ( mask gt 0 )
 iiOutside   = where ( mask eq 0 )
 
-if keyword_set ( pAngle ) then begin
-    
-    ;   Calculate a poloidal angle coordinate which labels
-    ;   the position along a a flux surface. This will be on 
-    ;   the rz grid so we can create grad Chi.
-    
-    ;   Trace the poloidal field lines at each r (minor) coord.
- 
     bInterpS    = { bR : bR, $
                     rleft : rleft, $
                     rdim : rdim, $
@@ -216,6 +204,117 @@ if keyword_set ( pAngle ) then begin
                     bPhi : bPhi, $
                     bz : bz }   
 
+    ; Trace a field line from coords fieldLine = [r,t,z] 
+	; --------------------------------------------------
+ 
+	if keyword_set ( fieldLineIn ) then begin
+
+		if keyword_set ( use_dlg_bField ) then begin
+
+			R_orig	= R
+			z_orig	= z
+			bR_orig	= bR
+			bPhi_orig	= bPhi
+			bz_orig	= bz
+			bInterpS_orig	= bInterpS
+
+			cdfId = ncdf_open ( 'dlg_bField.nc', /noWrite ) 
+
+				ncdf_varget, cdfId, 'R', R 
+				ncdf_varget, cdfId, 'z', z 
+				ncdf_varget, cdfId, 'bR', bR 
+				ncdf_varget, cdfId, 'bPhi', bPhi 
+				ncdf_varget, cdfId, 'bz', bz 
+
+			ncdf_close, cdfId
+
+    		bInterpS    = { bR : bR, $
+        	            rleft : r[0], $
+        	            rdim : r[-1]-r[0], $
+        	            nW : n_elements(r), $
+        	            z : z, $
+        	            zdim : z[-1]-z[0], $
+        	            nH : n_elements(z), $
+        	            bPhi : bPhi, $
+        	            bz : bz }   
+		endif
+
+		rStart	= fieldLineIn[0]
+		tStart	= fieldLineIn[1]	
+		zStart	= fieldLineIn[2]
+
+        ; RK4 
+		; ---
+
+        rPos    = rStart
+		tPos	= tStart
+        zPos    = zStart
+    
+        rArray  = rStart
+		tArray	= tStart
+        zArray  = zStart
+
+        stepCnt = 750
+        dPhi    = -2 * !pi / 200.0
+
+        for s=0,stepCnt-1 do begin
+
+            bHere   = interpB ( bInterpS, rPos, zPos )
+
+            K1_R  = dPhi * bHere.bR / bHere.bMag
+            K1_z    = dPhi * bHere.bz / bHere.bMag
+ 
+            bHere   = interpB ( bInterpS, rPos + K1_R / 2.0, zPos + K1_z / 2.0 )
+
+            K2_R    = dPhi * bHere.bR / bHere.bMag
+            K2_z    = dPhi * bHere.bz / bHere.bMag 
+    
+            bHere   = interpB ( bInterpS, rPos + K2_R / 2.0, zPos + K2_z / 2.0 )
+
+            K3_R    = dPhi * bHere.bR / bHere.bMag
+            K3_z    = dPhi * bHere.bz / bHere.bMag
+
+            bHere   = interpB ( bInterpS, rPos + K3_R, zPos + K3_z )
+
+            K4_R    = dPhi * bHere.bR / bHere.bMag
+            K4_z    = dPhi * bHere.bz / bHere.bMag
+
+            rPos    = rPos + ( K1_R + 2.0 * K2_R + 2.0 * K3_R + K4_R ) / 6.0
+            zPos    = zPos + ( K1_z + 2.0 * K2_z + 2.0 * K3_z + K4_z ) / 6.0
+			tPos	= tPos + dPhi
+ 
+            rArray  = [ rArray, rPos ]
+            tArray  = [ tArray, tPos ]
+            zArray  = [ zArray, zPos ]
+        
+		endfor
+
+		xArray	= rArray * cos ( tArray )
+		yArray	= rArray * sin ( tArray )
+
+		fieldLineOut	= [[rArray],[tArray],[zArray]]
+
+		if keyword_set ( use_dlg_bField ) then begin
+
+			R		= R_orig
+			z		= z_orig
+			bR		= bR_orig
+			bPhi	= bPhi_orig
+			bz		= bz_orig
+			bInterpS= bInterpS_orig
+
+		endif	
+
+	endif
+
+if keyword_set ( pAngle ) then begin
+    
+    ;   Calculate a poloidal angle coordinate which labels
+    ;   the position along a a flux surface. This will be on 
+    ;   the rz grid so we can create grad Chi.
+    
+    ;   Trace the poloidal field lines at each r (minor) coord.
+ 
     rMinor   = R - rmaxis
     rMinorRight = max ( rbbbs ) - rmaxis
     iiPositiveRMinor    = where ( rMinor gt 0 and rMinor le rMinorRight, iirMinorCnt )
