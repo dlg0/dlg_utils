@@ -6,6 +6,7 @@ function readGeqdsk, fileName, $
 	bFactor = bFactor, $
 	bPolFactor = bPolFactor, $
 	cMod_lim_adjust = cMod_lim_adjust, $
+	nstx_lim_adjust = nstx_lim_adjust, $
 	bInterpS = bInterpS, $
 	fieldLineIn = fieldLineIn, $
 	fieldLineOut = fieldLineOut, $
@@ -22,6 +23,7 @@ case_    = strArr ( 6 )
 f1  = '(6a8,3i4)'
 f2  = '(5e16.9)'
 f3  = '(2i5)'
+f4	= '(i5,e16.9,i5)'
 
 readf, lun, format = f1, case_, idum, nW, nH
 readf, lun, format = f2, rdim, zdim, rcentr, rleft, zmid
@@ -56,6 +58,23 @@ zbbbs    = bbbs[1,*]
 
 rlim    = lim[0,*]
 zlim    = lim[1,*]
+
+pressw  = fltArr ( nW )
+pwprim  = fltArr ( nW )
+dmion  	= fltArr ( nW )
+rhovn  	= fltArr ( nW )
+
+readf, lun, format = f4, kvtor, rvtor, nmass
+if kvtor gt 0 then begin
+	print, 'kvtor > 0 so reading pressq & pwprim'
+	readf, lun, format = f2, pressw
+	readf, lun, format = f2, pwprim
+endif
+if nmass gt 0 then begin
+	print, 'nmass > 0 so reading dmion'
+	readf, lun, format = f2, dmion
+endif
+readf, lun, format = f2, rhovn ; sqrt(toroidal flux)
 
 if keyword_set ( half ) then begin
 
@@ -93,8 +112,99 @@ if keyword_set ( cMod_lim_adjust ) then begin
 	lim[0,*]   = rlim
 	lim[1,*]   = zlim
 
+endif
+
+if keyword_set ( nstx_lim_adjust ) then begin
+
+	rlim = [ $
+		0.185100, $
+		0.185100, $
+		0.279400, $
+		0.279400, $
+		0.297900, $
+		0.571200, $
+		0.571200, $
+		0.617000, $
+		0.717000, $
+		1.14330 , $
+		1.41920 , $
+		1.43580 , $
+		1.58510 , $
+		1.60910 , $
+		1.64740 , $
+		1.66130 , $
+		1.67640 , $
+		1.69080 , $
+		1.69700 , $
+		1.69570 , $
+		1.68430 , $
+		1.66410 , $
+		1.64810 , $
+		1.61180 , $
+		1.58510 , $
+		1.43580 , $
+		1.41920 , $
+		1.14330 , $
+		0.717000, $
+		0.617000, $
+		0.571200, $
+		0.571200, $
+		0.297900, $
+		0.279400, $
+		0.279400, $
+		0.185100, $
+		0.185100, $
+		0.185100 ]
+
+	zlim = [ $
+      0.00000, $
+      1.00810, $
+      1.17140, $
+      1.57800, $
+      1.60340, $
+      1.60340, $
+      1.62800, $
+      1.62800, $
+      1.62800, $
+      1.43000, $
+      1.03970, $
+      0.99760, $
+      0.54500, $
+      0.49950, $
+      0.30600, $
+      0.23550, $
+      0.15860, $
+      0.08010, $
+      0.00000, $
+     -0.01770, $
+     -0.11230, $
+     -0.22100, $
+     -0.30260, $
+     -0.48600, $
+     -0.54500, $
+     -0.99760, $
+     -1.03970, $
+     -1.43000, $
+     -1.62800, $
+     -1.62800, $
+     -1.62800, $
+     -1.60340, $
+     -1.60340, $
+     -1.57800, $
+     -1.17140, $
+     -1.00810, $
+      0.00000, $
+      0.00000 ]
+
+	lim = fltArr ( 2, n_elements ( rLim ) )
+
+	lim[0,*]   = rlim
+	lim[1,*]   = zlim
+
+	limitr = n_elements ( lim[0,*] )
 
 endif
+
 
 if keyword_set ( reWrite ) then begin
 
@@ -114,6 +224,16 @@ if keyword_set ( reWrite ) then begin
 	printf, lun, format = f3, nbbbs, limitr
 	printf, lun, format = f2, bbbs
 	printf, lun, format = f2, lim
+
+	printf, lun, format = f4, kvtor, rvtor, nmass
+	if kvtor gt 0 then begin
+		printf, lun, format = f2, pressw
+		printf, lun, format = f2, pwprim
+	endif
+	if nmass gt 0 then begin
+		printf, lun, format = f2, dmion
+	endif
+	printf, lun, format = f2, rhovn ; sqrt(toroidal flux)
 
 	close, lun
 
@@ -567,6 +687,7 @@ endif else begin
 	            ffPrim : ffprim, $
 	            pPrime : pprime, $
 	            psizr : psizr, $
+				rhovn : rhovn, $ ; This is sqrt(toroidal flux)
 	            qPsi : qpsi, $
 	            nbbbs : nbbbs, $
 	            limitr : limitr, $
