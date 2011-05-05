@@ -27,8 +27,8 @@ pro oversample_boundary,  r, z, newR, newz
 
 	endfor
 
-	newR	= [r[*], newR]
-	newz	= [z[*], newz]	
+	;newR	= [r[*], newR]
+	;newz	= [z[*], newz]	
 	
 end 
 
