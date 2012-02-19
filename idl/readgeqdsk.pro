@@ -7,10 +7,13 @@ function readGeqdsk, fileName, $
 	bPolFactor = bPolFactor, $
 	cMod_lim_adjust = cMod_lim_adjust, $
 	nstx_lim_adjust = nstx_lim_adjust, $
+	iter_lim_adjust = iter_lim_adjust, $
 	bInterpS = bInterpS, $
 	fieldLineIn = fieldLineIn, $
 	fieldLineOut = fieldLineOut, $
-	use_dlg_bField = use_dlg_bField
+	use_dlg_bField = use_dlg_bField, $
+	noToroidalFlux = noToroidalFlux, $
+	create_aorsa_nc_input = create_aorsa_nc_input
 
     @constants
 
@@ -64,6 +67,7 @@ pwprim  = fltArr ( nW )
 dmion  	= fltArr ( nW )
 rhovn  	= fltArr ( nW )
 
+if ~ keyword_set(noToroidalFlux) then begin
 readf, lun, format = f4, kvtor, rvtor, nmass
 if kvtor gt 0 then begin
 	print, 'kvtor > 0 so reading pressq & pwprim'
@@ -75,6 +79,7 @@ if nmass gt 0 then begin
 	readf, lun, format = f2, dmion
 endif
 readf, lun, format = f2, rhovn ; sqrt(toroidal flux)
+endif
 
 if keyword_set ( half ) then begin
 
@@ -104,15 +109,39 @@ endif
 
 if keyword_set ( cMod_lim_adjust ) then begin
 
-	rLim[where(rlim gt 0.82 and zlim gt 0.22)]=0.82
-	rLim[where(rlim gt 0.82 and zlim lt -0.22)]=0.82
-	rLim[where(zLim lt -0.5)]=0.6
-	zLim[where(zLim lt -0.5)]=-0.5
+	limitrNew = 0
+	rLimNew = !NULL
+	zLimNew = !NULL
 
-	lim[0,*]   = rlim
-	lim[1,*]   = zlim
+	for i=0,limitr-1 do begin
+
+		keep = 1
+		if rlim[i] gt 0.75 and zlim[i] gt 0.22 then keep = 0
+		if rlim[i] gt 0.75 and zlim[i] lt -0.22 then keep = 0
+		if zlim[i] lt -0.45 then keep = 0
+		if zlim[i] gt 0.5 then keep = 0
+
+		if keep eq 1 then begin
+
+			rLimNew = [rLimNew,rLim[i]]
+			zLimNew = [zLimNew,zLim[i]]
+			limitrNew = limitrNew + 1
+
+		endif
+
+	endfor
+
+	limitr = limitrNew
+	lim = fltArr(2,limitr)
+	lim[0,*]   = rlimNew
+	lim[1,*]   = zlimNew
+	rLim = lim[0,*]
+	zLim = lim[1,*]
+	rLim = lim[0,*]
+	zLim = lim[1,*]
 
 endif
+
 
 if keyword_set ( nstx_lim_adjust ) then begin
 
@@ -205,6 +234,40 @@ if keyword_set ( nstx_lim_adjust ) then begin
 
 endif
 
+if keyword_set ( iter_lim_adjust ) then begin
+
+	rlim = [ $
+		8.24609, $
+		8.24609, $
+		8.12097, $
+		4.45905, $
+		4.43897, $
+		4.43897, $
+		4.45884, $
+		8.12601, $
+		8.24609, $
+		8.24609 ]
+
+	zlim = [ $
+    	 0.36876, $
+    	 3.89886, $
+    	 3.96721, $
+    	 3.96721, $
+    	 3.86538, $
+    	-3.12342, $
+    	-3.22969, $
+    	-3.22969, $
+    	-3.09334, $
+    	 0.368762 ]
+	
+	lim = fltArr ( 2, n_elements ( rLim ) )
+
+	lim[0,*]   = rlim
+	lim[1,*]   = zlim
+
+	limitr = n_elements ( lim[0,*] )
+
+endif
 
 if keyword_set ( reWrite ) then begin
 
@@ -225,16 +288,17 @@ if keyword_set ( reWrite ) then begin
 	printf, lun, format = f2, bbbs
 	printf, lun, format = f2, lim
 
-	printf, lun, format = f4, kvtor, rvtor, nmass
-	if kvtor gt 0 then begin
-		printf, lun, format = f2, pressw
-		printf, lun, format = f2, pwprim
+	if ~ keyword_set(noToroidalFlux) then begin
+		printf, lun, format = f4, kvtor, rvtor, nmass
+		if kvtor gt 0 then begin
+			printf, lun, format = f2, pressw
+			printf, lun, format = f2, pwprim
+		endif
+		if nmass gt 0 then begin
+			printf, lun, format = f2, dmion
+		endif
+		printf, lun, format = f2, rhovn ; sqrt(toroidal flux)
 	endif
-	if nmass gt 0 then begin
-		printf, lun, format = f2, dmion
-	endif
-	printf, lun, format = f2, rhovn ; sqrt(toroidal flux)
-
 	close, lun
 
 endif
@@ -275,6 +339,51 @@ bMag    = sqrt ( bR^2 + bPhi^2 + bz^2 )
 buR = bR / bMag
 buPhi   = bPhi / bMag
 buZ = bZ / bMag
+
+if keyword_set ( create_aorsa_nc_input ) then begin
+
+	nX	= 1024 
+	nY	= 1024 
+
+	rSave	= rLeft + fIndGen ( nX ) * ( rDim / ( nX - 1 ) )
+	zSave	= min(z) + fIndGen ( nY ) * ( zDim / ( nY - 1 ) )
+
+	rSave2D	= rebin ( rSave, nX, nY )
+	zSave2D	= transpose ( rebin ( zSave, nY, nX ) )
+
+	brSave = interpolate ( br, ( rSave2D - rleft ) / rdim * (nw-1), $
+   			( zSave2D + zmaxis - min ( z ) ) / zdim * (nh-1) )
+	bzSave = interpolate ( bz, ( rSave2D - rleft ) / rdim * (nw-1), $
+   			( zSave2D + zmaxis - min ( z ) ) / zdim * (nh-1) )
+	bPhiSave = interpolate ( bPhi, ( rSave2D - rleft ) / rdim * (nw-1), $
+   			( zSave2D + zmaxis - min ( z ) ) / zdim * (nh-1) )
+
+	outFileName	= 'dlg_bField.nc'
+	nc_id	= nCdf_create ( outFileName, /clobber )
+	nCdf_control, nc_id, /fill
+	
+	nR_id	= nCdf_dimDef ( nc_id, 'nR', nX )
+	nz_id	= nCdf_dimDef ( nc_id, 'nz', nY )
+	scalar_id	= nCdf_dimDef ( nc_id, 'scalar', 1 )
+	
+	R_id = nCdf_varDef ( nc_id, 'R', [ nR_id ], /float )
+	z_id = nCdf_varDef ( nc_id, 'z', [ nz_id ], /float )
+	bR_id = nCdf_varDef ( nc_id, 'bR', [nR_id, nz_id], /float )
+	bz_id = nCdf_varDef ( nc_id, 'bz', [nR_id, nz_id], /float )
+	bPhi_id = nCdf_varDef ( nc_id, 'bPhi', [nR_id, nz_id], /float )
+
+	nCdf_control, nc_id, /enDef
+	
+	nCdf_varPut, nc_id, R_id, rSave 
+	nCdf_varPut, nc_id, z_id, zSave 
+	nCdf_varPut, nc_id, bR_id, brSave 
+	nCdf_varPut, nc_id, bz_id, bzSave 
+	nCdf_varPut, nc_id, bPhi_id, bPhiSave 
+
+	nCdf_close, nc_id
+
+endif 
+
 
 
 pPrime_spline   = spl_init ( fluxGrid, pPrime )
