@@ -5,6 +5,7 @@ function readGeqdsk, fileName, $
 	reWrite = reWrite, $
 	bFactor = bFactor, $
 	bPolFactor = bPolFactor, $
+	bTorFactor = bTorFactor, $
 	cMod_lim_adjust = cMod_lim_adjust, $
 	nstx_lim_adjust = nstx_lim_adjust, $
 	iter_lim_adjust = iter_lim_adjust, $
@@ -87,6 +88,7 @@ if keyword_set ( half ) then begin
 	fpol	= fpol / 2.0
 	simag	= simag / 2.0
 	sibry	= sibry / 2.0
+	bcentr	= bcentr / 2.0
 
 endif
 
@@ -96,6 +98,14 @@ if keyword_set ( bFactor ) then begin
 	fpol	= fpol * bFactor
 	simag	= simag * bFactor
 	sibry	= sibry * bFactor
+	bcentr	= bcentr * bFactor
+
+endif
+
+if keyword_set ( bTorFactor ) then begin
+
+	fpol	= fpol * bTorFactor
+	bcentr	= bcentr * bTorFactor
 
 endif
 
