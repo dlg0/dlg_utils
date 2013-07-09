@@ -1,3 +1,84 @@
+function Coords_CYL_to_XYZ, c_CYL 
+
+    r = c_CYL[0]
+    t = c_CYL[1]
+    z = c_CYL[2]
+
+    x = r * cos(t)
+    y = r * sin(t)
+    
+    return, [x,y,z]
+
+end
+
+function Coords_XYZ_to_CYL, c_XYZ
+
+    x = c_XYZ[0]
+    y = c_XYZ[1]
+    z = c_XYZ[2]
+
+    r = sqrt(x^2+y^2)
+    t = atan(y,x)
+
+    return, [r,t,z]
+
+end
+
+
+function Get_CYL_to_XYZ_RotMat, c_CYL 
+
+    r = c_CYL[0]
+    t = c_CYL[1]
+    z = c_CYL[2]
+
+    return, [ $
+        [cos(t),-sin(t),0],$
+        [sin(t),cos(t),0],$
+        [0,0,1]]        
+
+end 
+
+function vector_XYZ_to_CYL, c_XYZ, b_XYZ
+
+    c_CYL = Coords_XYZ_to_CYL(c_XYZ)
+    Rot2XYZ = Get_CYL_to_XYZ_RotMat(c_CYL)
+    Rot2CYL = transpose(Rot2XYZ)
+
+    return, transpose(Rot2CYL ## transpose(b_XYZ))
+
+end
+
+function vector_CYL_to_XYZ, c_CYL, b_CYL
+
+    c_XYZ = Coords_CYL_to_XYZ(c_CYL)
+    Rot2XYZ = Get_CYL_to_XYZ_RotMat(c_CYL)
+
+    return, transpose(Rot2XYZ ## transpose(b_CYL))
+
+end
+
+function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag
+
+    c_CYL = Coords_XYZ_to_CYL(c_XYZ)
+
+    x = c_XYZ[0]
+    y = c_XYZ[1]
+    z = c_XYZ[2]
+ 
+    r = c_CYL[0]
+    t = c_CYL[1] 
+
+    bHere_CYL   = interpB ( bInterpS, r, z )
+    b_CYL = [bHere_CYL.bR,bHere_CYL.bPhi,bHere_CYL.bZ]
+
+    b_XYZ = vector_CYL_to_XYZ(c_CYL,b_CYL)
+
+    bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
+
+    return, b_XYZ
+
+end
+
 function readGeqdsk, fileName, $
 	plot_ = plot_, $
 	pAngle = pAngle, $
@@ -11,7 +92,14 @@ function readGeqdsk, fileName, $
 	iter_lim_adjust = iter_lim_adjust, $
 	bInterpS = bInterpS, $
 	fieldLineIn = fieldLineIn, $
-	fieldLineOut = fieldLineOut, $
+    FieldLineTraceDir = FieldLineTraceDir, $
+    FieldLineTraceDS = FieldLineTraceDS, $
+    FieldLineTraceNSteps = FieldLineTraceNSteps, $
+	FieldLine_XYZ = fieldLine_XYZ, $
+    B_AlongFieldLine_XYZ = B_AlongFieldLine_XYZ, $
+	FieldLine_CYL = fieldLine_CYL, $
+    B_AlongFieldLine_CYL = B_AlongFieldLine_CYL, $
+    SafetyFactor = SafetyFactor, $
 	use_dlg_bField = use_dlg_bField, $
 	noToroidalFlux = noToroidalFlux, $
 	create_aorsa_nc_input = create_aorsa_nc_input
@@ -547,53 +635,82 @@ iiOutside   = where ( mask eq 0 )
         ; RK4 
 		; ---
 
-        rPos    = rStart
-		tPos	= tStart
-        zPos    = zStart
-    
-        rArray  = rStart
-		tArray	= tStart
-        zArray  = zStart
+        c_CYL = [rStart,tStart,zStart]
+        c_XYZ = Coords_CYL_to_XYZ(c_CYL)    
+        b_XYZ = bHere_XYZ (bInterpS, c_XYZ)
+        b_CYL = vector_XYZ_to_CYL (c_XYZ,b_XYZ)  
 
-        stepCnt = 750
-        dPhi    = -2 * !pi / 200.0
+        PolAngle = 0
+        TorAngle = 0
+
+        c_XYZ_array = c_XYZ
+        c_CYL_array = c_CYL
+
+        b_XYZ_array = b_XYZ
+        b_CYL_array = b_CYL
+
+        if keyword_set(FieldLineTraceNSteps) then stepCnt = FieldLineTraceNSteps else stepCnt = 10000
+        if keyword_set(FieldLineTraceDS) then dS = FieldLineTraceDS else dS = 0.01
+        if keyword_set(FieldLineTraceDir) then _TraceSign = FieldLineTraceDir else _TraceSign = 1
+
+        dS = _TraceSign * dS
 
         for s=0,stepCnt-1 do begin
 
-            bHere   = interpB ( bInterpS, rPos, zPos )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace )
 
-            K1_R  = dPhi * bHere.bR / bHere.bMag
-            K1_z    = dPhi * bHere.bz / bHere.bMag
+            K1  = dS * b_XYZ / bMagTrace 
  
-            bHere   = interpB ( bInterpS, rPos + K1_R / 2.0, zPos + K1_z / 2.0 )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K1 / 2.0, bMag=bMagTrace )
 
-            K2_R    = dPhi * bHere.bR / bHere.bMag
-            K2_z    = dPhi * bHere.bz / bHere.bMag 
+            K2  = dS * b_XYZ / bMagTrace 
     
-            bHere   = interpB ( bInterpS, rPos + K2_R / 2.0, zPos + K2_z / 2.0 )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K2 / 2.0, bMag=bMagTrace )
 
-            K3_R    = dPhi * bHere.bR / bHere.bMag
-            K3_z    = dPhi * bHere.bz / bHere.bMag
+            K3  = dS * b_XYZ / bMagTrace 
 
-            bHere   = interpB ( bInterpS, rPos + K3_R, zPos + K3_z )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K3, bMag=bMagTrace )
 
-            K4_R    = dPhi * bHere.bR / bHere.bMag
-            K4_z    = dPhi * bHere.bz / bHere.bMag
+            K4  = dS * b_XYZ / bMagTrace 
 
-            rPos    = rPos + ( K1_R + 2.0 * K2_R + 2.0 * K3_R + K4_R ) / 6.0
-            zPos    = zPos + ( K1_z + 2.0 * K2_z + 2.0 * K3_z + K4_z ) / 6.0
-			tPos	= tPos + dPhi
- 
-            rArray  = [ rArray, rPos ]
-            tArray  = [ tArray, tPos ]
-            zArray  = [ zArray, zPos ]
-        
+            c_XYZ   = c_XYZ + ( K1 + 2 * K2 + 2 * K3 + K4 ) / 6.0
+            c_CYL   = Coords_XYZ_to_CYL(c_XYZ) 
+           
+            b_XYZ   = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace )
+            b_CYL   = vector_XYZ_to_CYL (c_XYZ,b_XYZ)
+
+            c_XYZ_array  = [ [c_XYZ_array],[c_XYZ] ]
+            c_CYL_array  = [ [c_CYL_array],[c_CYL] ]
+
+            ThisTorAngle = c_CYL_array[1,s+1]*!radeg
+            PrevTorAngle = c_CYL_array[1,s]*!radeg
+            TorStep = ThisTorAngle-PrevTorAngle
+            if(TorStep gt 20) then TorStep = TorStep-360
+            if(TorStep lt -20) then TorStep = TorStep+360
+            TorAngle = TorAngle + TorStep
+            ;print, 'Tor Angles', TorAngle, TorStep
+
+
+            ThisPolAngle = atan((c_CYL_array[2,s+1]-zmaxis),(c_CYL_array[0,s+1]-rmaxis))*!radeg
+            PrevPolAngle = atan((c_CYL_array[2,s]-zmaxis),(c_CYL_array[0,s]-rmaxis))*!radeg
+            PolStep = ThisPolAngle-PrevPolAngle
+            if(PolStep gt 20) then PolStep = PolStep-360
+            if(PolStep lt -20) then PolStep = PolStep+360
+            PolAngle = PolAngle + PolStep 
+            ;print, 'Pol Angles', PolAngle, PolStep
+
+            b_XYZ_array  = [ [b_XYZ_array],[b_XYZ] ]
+            b_CYL_array  = [ [b_CYL_array],[b_CYL] ]
+
 		endfor
 
-		xArray	= rArray * cos ( tArray )
-		yArray	= rArray * sin ( tArray )
+        SafetyFactor = TorAngle / PolAngle
 
-		fieldLineOut	= [[rArray],[tArray],[zArray]]
+		FieldLine_XYZ= c_XYZ_array
+        B_AlongFieldLine_XYZ = b_XYZ_array
+		FieldLine_CYL= c_CYL_array
+        B_AlongFieldLine_CYL = b_CYL_array
+
 
 		if keyword_set ( use_dlg_bField ) then begin
 
