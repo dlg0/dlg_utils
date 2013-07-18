@@ -1,3 +1,4 @@
+
 function Coords_CYL_to_XYZ, c_CYL 
 
     r = c_CYL[0]
@@ -54,6 +55,28 @@ function vector_CYL_to_XYZ, c_CYL, b_CYL
     Rot2XYZ = Get_CYL_to_XYZ_RotMat(c_CYL)
 
     return, transpose(Rot2XYZ ## transpose(b_CYL))
+
+end
+
+pro Coords_test
+
+    
+    c_CYL = [1.5,65*!dtor,1]
+    c_XYZ = Coords_CYL_to_XYZ(c_CYL)
+
+    ; Compare with anlaytic result from Chen. pg 31.
+    v_CYL = [3*cos(c_CYL[1]),-2*c_CYL[0],5]
+    v_XYZ = [$
+            3*c_XYZ[0]^2/(c_XYZ[0]^2+c_XYZ[1]^2)+2*c_XYZ[1],$
+            3*c_XYZ[0]*c_XYZ[1]/(c_XYZ[0]^2+c_XYZ[1]^2)-2*c_XYZ[0],$
+            5]
+
+    v_XYZ_test = Vector_CYL_to_XYZ(c_CYL,v_CYL)
+
+    v_CYL_test = Vector_XYZ_to_CYL(c_XYZ,v_XYZ)
+
+    print, v_XYZ, v_XYZ_test
+    print, v_CYL, v_CYL_test
 
 end
 
