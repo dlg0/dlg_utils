@@ -91,6 +91,8 @@ endif
 readf, lun, format = f2, rhovn ; sqrt(toroidal flux)
 endif
 
+free_lun, lun
+
 if keyword_set ( half ) then begin
 
 	psizr	= psizr / 2.0
@@ -581,7 +583,7 @@ iiOutside   = where ( mask eq 0 )
             b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace )
 
             K1  = dS * b_XYZ / bMagTrace 
- 
+
             b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K1 / 2.0, bMag=bMagTrace )
 
             K2  = dS * b_XYZ / bMagTrace 
