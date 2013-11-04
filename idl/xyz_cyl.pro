@@ -53,8 +53,7 @@ function vector_CYL_to_XYZ, c_CYL, b_CYL
 
     c_XYZ = Coords_CYL_to_XYZ(c_CYL)
     Rot2XYZ = Get_CYL_to_XYZ_RotMat(c_CYL)
-print, Rot2xyz
-print, c_xyz
+
     return, transpose(Rot2XYZ ## transpose(b_CYL))
 
 end

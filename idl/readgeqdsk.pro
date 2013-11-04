@@ -1,4 +1,5 @@
 @xyz_cyl 
+@interpb
 
 function readGeqdsk, fileName, $
 	plot_ = plot_, $
@@ -405,8 +406,8 @@ fluxGrid    = fIndGen ( nW ) * fStep + simag
 
 bR  = -1.0 * dlg_pDeriv ( psizr, 2, zStep ) / rebin ( R, nW, nH )
 bz  = dlg_pDeriv ( psizr, 1, rStep ) / rebin ( R, nW, nH )
-print, max(bR), min(bR)
-print, max(bz), min(bz)
+;print, max(bR), min(bR)
+;print, max(bz), min(bz)
 fPol_spline = spl_init ( fluxGrid, fPol )
 
 fPolRZ  = reform ( spl_interp ( fluxGrid, fPol, fPol_spline, psizr[*] ), nW, nH )

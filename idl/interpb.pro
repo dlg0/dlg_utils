@@ -1,3 +1,5 @@
+@xyz_cyl
+
 function interpB,  bStruct, rPos, zPos
 
     bRHere  = interpolate ( bStruct.bR, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
@@ -36,7 +38,6 @@ end
 
 function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag
 
-    print, 'bHere_XYZ:', c_XYZ
     c_CYL = Coords_XYZ_to_CYL(c_XYZ)
 
     x = c_XYZ[0]
