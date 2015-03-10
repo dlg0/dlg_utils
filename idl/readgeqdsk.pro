@@ -12,6 +12,7 @@ function readGeqdsk, fileName, $
 	cMod_lim_adjust = cMod_lim_adjust, $
 	nstx_lim_adjust = nstx_lim_adjust, $
 	iter_lim_adjust = iter_lim_adjust, $
+    d3d_lim_adjust = d3d_lim_adjust, $
 	bInterpS = bInterpS, $
 	fieldLineIn = fieldLineIn, $
     FieldLineTraceDir = FieldLineTraceDir, $
@@ -167,6 +168,9 @@ endif
 
 if keyword_set ( nstx_lim_adjust ) then begin
 
+    rLimOld = rLim
+    zLimOld = zLim
+
 	rlim = [ $
 		0.185100, $
 		0.185100, $
@@ -254,7 +258,102 @@ if keyword_set ( nstx_lim_adjust ) then begin
 
 	limitr = n_elements ( lim[0,*] )
 
+    p=plot(rLimOld,zLimOld)
+    p=plot(rLim,zLim,/over,color='blue', thick=2)
+
 endif
+
+if keyword_set ( d3d_lim_adjust ) then begin
+
+	rlim = [ $
+	  1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.60800, $
+      1.64700, $
+      1.78500, $
+      2.07000, $
+      2.12800, $
+      2.24500, $
+      2.32300, $
+      2.37700, $
+      2.36250, $
+      2.36443, $
+      2.36497, $
+      2.36532, $
+      2.36512, $
+      2.36484, $
+      2.36433, $
+      2.36250, $
+      2.37700, $
+      2.13400, $
+      1.78600, $
+      1.76800, $
+      1.76800, $
+      1.68200, $
+      1.37200, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.01600, $
+      1.0160]
+
+	zlim = [ $
+	 0.000000, $
+     0.964000, $
+     0.968000, $
+      1.00100, $
+      1.01900, $
+      1.07700, $
+      1.07000, $
+      1.09600, $
+      1.09500, $
+      1.07700, $
+      1.07700, $
+      1.04000, $
+     0.993000, $
+     0.709000, $
+     0.519000, $
+     0.389000, $
+     0.400000, $
+     0.222000, $
+     0.133000, $
+    0.0440000, $
+   -0.0440000, $
+    -0.133000, $
+    -0.222000, $
+    -0.400000, $
+    -0.389000, $
+    -0.973000, $
+     -1.17400, $
+     -1.21100, $
+     -1.25000, $
+     -1.25000, $
+     -1.25000, $
+     -1.22300, $
+     -1.22300, $
+    -0.830000, $
+    -0.800000, $
+    -0.415000, $
+    -0.400000, $
+  -0.0010000] 
+
+	lim = fltArr ( 2, n_elements ( rLim ) )
+
+	lim[0,*]   = rlim
+	lim[1,*]   = zlim
+
+	limitr = n_elements ( lim[0,*] )
+
+endif
+
 
 if keyword_set ( iter_lim_adjust ) then begin
 
