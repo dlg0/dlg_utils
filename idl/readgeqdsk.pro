@@ -19,6 +19,7 @@ function readGeqdsk, fileName, $
     FieldLineTraceDS = FieldLineTraceDS, $
     FieldLineTraceNSteps = FieldLineTraceNSteps, $
 	FieldLine_XYZ = fieldLine_XYZ, $
+	FieldLineTracePerp = FieldLineTracePerp, $
     B_AlongFieldLine_XYZ = B_AlongFieldLine_XYZ, $
 	FieldLine_CYL = fieldLine_CYL, $
     B_AlongFieldLine_CYL = B_AlongFieldLine_CYL, $
@@ -260,6 +261,7 @@ if keyword_set ( nstx_lim_adjust ) then begin
 
     p=plot(rLimOld,zLimOld)
     p=plot(rLim,zLim,/over,color='blue', thick=2)
+	p=plot(rbbbs,zbbbs,/over,color='green',thick=2)
 
 endif
 
@@ -680,26 +682,26 @@ iiOutside   = where ( mask eq 0 )
 
         for s=0,stepCnt-1 do begin
 
-            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace, Perp=FieldLineTracePerp )
 
             K1  = dS * b_XYZ / bMagTrace 
 
-            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K1 / 2.0, bMag=bMagTrace )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K1 / 2.0, bMag=bMagTrace, Perp=FieldLineTracePerp )
 
             K2  = dS * b_XYZ / bMagTrace 
     
-            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K2 / 2.0, bMag=bMagTrace )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K2 / 2.0, bMag=bMagTrace, Perp=FieldLineTracePerp )
 
             K3  = dS * b_XYZ / bMagTrace 
 
-            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K3, bMag=bMagTrace )
+            b_XYZ  = bHere_XYZ ( bInterpS, c_XYZ + K3, bMag=bMagTrace, Perp=FieldLineTracePerp )
 
             K4  = dS * b_XYZ / bMagTrace 
 
             c_XYZ   = c_XYZ + ( K1 + 2 * K2 + 2 * K3 + K4 ) / 6.0
             c_CYL   = Coords_XYZ_to_CYL(c_XYZ) 
            
-            b_XYZ   = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace )
+            b_XYZ   = bHere_XYZ ( bInterpS, c_XYZ, bMag=bMagTrace, Perp=FieldLineTracePerp )
             b_CYL   = vector_XYZ_to_CYL (c_XYZ,b_XYZ)
 
             c_XYZ_array  = [ [c_XYZ_array],[c_XYZ] ]

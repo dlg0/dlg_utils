@@ -36,7 +36,7 @@ function bHere_CYL, bInterpS, c_CYL, bMag=bMag
 end
 
 
-function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag
+function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag, perp=perp
 
     c_CYL = Coords_XYZ_to_CYL(c_XYZ)
 
@@ -53,6 +53,15 @@ function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag
     b_XYZ = vector_CYL_to_XYZ(c_CYL,b_CYL)
 
     bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
+
+	if keyword_set(perp) then begin
+		; Add capability to return a vector perp to b
+		zU = [0,0,1]
+		b_XYZ = [zU[1]*b_XYZ[2]-zU[2]*b_XYZ[1],$
+					 -(zU[0]*b_XYZ[2]-zU[2]*b_XYZ[0]),$
+					 zU[0]*b_XYZ[1]-zU[1]*b_XYZ[0]]
+		bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
+	endif
 
     return, b_XYZ
 
