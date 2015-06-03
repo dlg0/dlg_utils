@@ -1,18 +1,18 @@
 @xyz_cyl
 
-function interpB,  bStruct, rPos, zPos
+function interpB,  b, _r, _z
 
-    bRHere  = interpolate ( bStruct.bR, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
-        ( zPos - min ( bStruct.z ) ) / bStruct.zdim * (bStruct.nH-1.0), cubic = -0.5 )
-    bPhiHere  = interpolate ( bStruct.bPhi, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
-        ( zPos - min ( bStruct.z ) ) / bStruct.zdim * (bStruct.nH-1.0), cubic = -0.5 )
-    bzHere  = interpolate ( bStruct.bz, ( rPos - bStruct.rleft ) / bStruct.rdim * (bStruct.nW-1.0), $
-        ( zPos - min ( bStruct.z ) ) / bStruct.zdim * (bStruct.nH-1.0), cubic = -0.5 )
+    bRHere  = interpolate ( b.br, ( _r - b.r[0] ) / b.rSize * (b.nR-1.0), $
+        ( _z - b.z[0] ) / b.zSize * (b.nZ-1.0), cubic = -0.5 )
+    bTHere  = interpolate ( b.bt, ( _r - b.r[0] ) / b.rsize * (b.nR-1.0), $
+        ( _z - b.z[0] ) / b.zSize * (b.nZ-1.0), cubic = -0.5 )
+    bzHere  = interpolate ( b.bz, ( _r - b.r[0] ) / b.rSize * (b.nR-1.0), $
+        ( _z - b.z[0] ) / b.zSize * (b.nZ-1.0), cubic = -0.5 )
     
-    bMag    = sqrt ( bRHere^2 + bPhiHere^2 + bzHere^2 )
+    bMag    = sqrt ( bRHere^2 + bTHere^2 + bzHere^2 )
 
-    bOut    = { bR : bRHere, $
-                bPhi :bPhiHere, $
+    bOut    = { br : bRHere, $
+                bt : bTHere, $
                 bz : bzHere, $
                 bMag : bMag }
 
@@ -36,7 +36,7 @@ function bHere_CYL, bInterpS, c_CYL, bMag=bMag
 end
 
 
-function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag, perp=perp
+function bHere_XYZ, b, c_XYZ, bMag=bMag, perp=perp
 
     c_CYL = Coords_XYZ_to_CYL(c_XYZ)
 
@@ -47,8 +47,8 @@ function bHere_XYZ, bInterpS, c_XYZ, bMag=bMag, perp=perp
     r = c_CYL[0]
     t = c_CYL[1] 
 
-    bHere_CYL   = interpB ( bInterpS, r, z )
-    b_CYL = [bHere_CYL.bR,bHere_CYL.bPhi,bHere_CYL.bZ]
+    bHere_CYL   = interpB ( b, r, z )
+    b_CYL = [bHere_CYL.br,bHere_CYL.bt,bHere_CYL.bz]
 
     b_XYZ = vector_CYL_to_XYZ(c_CYL,b_CYL)
 

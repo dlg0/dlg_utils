@@ -612,10 +612,18 @@ iiOutside   = where ( mask eq 0 )
                     rleft : rleft, $
                     rdim : rdim, $
                     nW : nW, $
+					rSize : rdim, $
+					nR : nW, $
+					r : r, $
                     z : z, $
+					r2d : r2d, $
+					z2d : z2d, $
                     zdim : zdim, $
+					zSize : zdim, $
                     nH : nH, $
+					nZ : nH, $
                     bPhi : bPhi, $
+					bt : bPhi, $
                     bz : bz }   
 
     ; Trace a field line from coords fieldLine = [r,t,z] 
@@ -642,15 +650,29 @@ iiOutside   = where ( mask eq 0 )
 
 			ncdf_close, cdfId
 
+			nR = n_elements(r)
+			nZ = n_elements(z)
+			r2D = rebin ( R, nR, nZ )
+			z2D = transpose ( rebin ( z, nZ, nR ) )
+
     		bInterpS    = { bR : bR, $
         	            rleft : r[0], $
         	            rdim : r[-1]-r[0], $
-        	            nW : n_elements(r), $
+        	            nW : nR, $
+						rSize : rdim, $
+						nR : nR, $
+						r : r, $
         	            z : z, $
+						r2d : r2d, $
+						z2d : z2d, $
         	            zdim : z[-1]-z[0], $
-        	            nH : n_elements(z), $
+        	            nH : nZ, $
+						zSize : zdim, $
+						nZ : nZ, $
         	            bPhi : bPhi, $
+						bt : bPhi, $
         	            bz : bz }   
+
 		endif
 
 		rStart	= fieldLineIn[0]
