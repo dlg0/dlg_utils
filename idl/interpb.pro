@@ -62,6 +62,29 @@ function bHere_CYL, bInterpS, c_CYL, bMag=bMag
 
 end
 
+function bHere_XYZ2, b, c_XYZ, bMag=bMag, perp=perp
+
+    x = c_XYZ[0]
+    y = c_XYZ[1]
+    z = c_XYZ[2]
+ 
+    bHere_XYZ   = interpB_XYZ ( b, x, y )
+	b_XYZ=[bHere_XYZ.bx,bHere_XYZ.by,bHere_XYZ.bz]
+
+    bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
+
+	if keyword_set(perp) then begin
+		; Add capability to return a vector perp to b
+		zU = [0,0,1]
+		b_XYZ = [zU[1]*b_XYZ[2]-zU[2]*b_XYZ[1],$
+					 -(zU[0]*b_XYZ[2]-zU[2]*b_XYZ[0]),$
+					 zU[0]*b_XYZ[1]-zU[1]*b_XYZ[0]]
+		bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
+	endif
+
+    return, b_XYZ
+
+end
 
 function bHere_XYZ, b, c_XYZ, bMag=bMag, perp=perp
 
@@ -94,27 +117,4 @@ function bHere_XYZ, b, c_XYZ, bMag=bMag, perp=perp
 
 end
 
-function bHere_XYZ2, b, c_XYZ, bMag=bMag, perp=perp
-
-    x = c_XYZ[0]
-    y = c_XYZ[1]
-    z = c_XYZ[2]
- 
-    bHere_XYZ   = interpB_XYZ ( b, x, y )
-	b_XYZ=[bHere_XYZ.bx,bHere_XYZ.by,bHere_XYZ.bz]
-
-    bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
-
-	if keyword_set(perp) then begin
-		; Add capability to return a vector perp to b
-		zU = [0,0,1]
-		b_XYZ = [zU[1]*b_XYZ[2]-zU[2]*b_XYZ[1],$
-					 -(zU[0]*b_XYZ[2]-zU[2]*b_XYZ[0]),$
-					 zU[0]*b_XYZ[1]-zU[1]*b_XYZ[0]]
-		bMag = sqrt(b_XYZ[0]^2+b_XYZ[1]^2+b_XYZ[2]^2)
-	endif
-
-    return, b_XYZ
-
-end
 

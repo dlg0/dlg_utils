@@ -1,4 +1,4 @@
-function dlg_fieldlinetrace_xyz, b, StartPoint_XYZ, $
+function dlg_fieldlinetrace_xy, b, StartPoint_XY, $
     direction = direction, $
     ds = _ds, $
     nS = nS, $
@@ -8,16 +8,11 @@ function dlg_fieldlinetrace_xyz, b, StartPoint_XYZ, $
     B_FieldLine_CYL = B_FieldLine_CYL, $
 	perp = perp, $
 	use_dlg_bField = use_dlg_bField
-	
-	;r0 = g.rmaxis
-	;z0 = g.zmaxis
 
-; Trace a field line from coords fieldLine = [r,t,z] 
-; --------------------------------------------------
 
-	xStart	= StartPoint_XYZ[0]
-	yStart	= StartPoint_XYZ[1]	
-	zStart	= StartPoint_XYZ[2]
+	xStart	= StartPoint_XY[0]
+	yStart	= StartPoint_XY[1]	
+	zStart	= 0
 
     ; RK4 
 	; ---
@@ -64,7 +59,7 @@ function dlg_fieldlinetrace_xyz, b, StartPoint_XYZ, $
 	endfor
 
 	FieldLine_XYZ= c_XYZ_array
-    	B_FieldLine_XYZ = b_XYZ_array
+    B_FieldLine_XYZ = b_XYZ_array
 
 	return, FieldLine_XYZ
 
