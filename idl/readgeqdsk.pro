@@ -26,7 +26,8 @@ function readGeqdsk, fileName, $
     SafetyFactor = SafetyFactor, $
 	use_dlg_bField = use_dlg_bField, $
 	noToroidalFlux = noToroidalFlux, $
-	create_aorsa_nc_input = create_aorsa_nc_input
+	create_aorsa_nc_input = create_aorsa_nc_input, $
+    writeCOMSOLFile = WriteCOMSOLFile
 
     @constants
 
@@ -1063,6 +1064,10 @@ endif else begin
                 Jt_axis : Jt_axis }
 
 endelse
+
+if keyword_set(WriteCOMSOLFile) then begin
+        write_csv, 'bFieldForComsol.csv', r2d[*], z2d[*], bR[*], bPhi[*], bZ[*], header=['R[m]','Z[m]','Br[T]','Bt[T]','Bz[T]']
+endif
 
 	
 return, eqdsk
