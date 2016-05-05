@@ -1066,7 +1066,10 @@ endif else begin
 endelse
 
 if keyword_set(WriteCOMSOLFile) then begin
-        write_csv, 'bFieldForComsol.csv', r2d[*], z2d[*], bR[*], bPhi[*], bZ[*], header=['R[m]','Z[m]','Br[T]','Bt[T]','Bz[T]']
+        normPoloidalFlux = (psizr-simag)/(sibry-simag)
+        write_csv, 'bFieldForComsol.csv', r2d[*], z2d[*], $
+                bR[*], bPhi[*], bZ[*], $
+                normPoloidalFlux[*],header=['R[m]','Z[m]','Br[T]','Bt[T]','Bz[T]','PoloidalFlux[normalized]']
 endif
 
 	
