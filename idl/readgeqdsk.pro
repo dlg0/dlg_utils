@@ -581,7 +581,7 @@ fPrime_Rz   = reform ( spl_interp ( fluxGrid, ffprim, fPrime_spline, psizr[*] ),
 R2D = rebin ( R, nW, nH )
 z2D = transpose ( rebin ( z, nH, nW ) )
 
-JT_Rz   = R2D * pPrime_Rz + fPrime_Rz / R2D / u0
+JT_Rz   = R2D * pPrime_Rz + fPrime_Rz / R2D / _u0
 
 iiAxis = where ( abs ( R2d - rmaxis ) eq min ( abs ( R2d - rmaxis ) ) $
         and abs ( z2d - zmaxis ) eq min ( abs ( z2d - zmaxis ) ) )
