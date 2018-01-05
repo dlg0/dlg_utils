@@ -1,5 +1,3 @@
-	common constants, e, me, mi, c, e0, u0, II
-
 	_e	= 1.60217646d-19
     _amu = 1.66053904d-27
    	_mi	= 1.00794*_amu
