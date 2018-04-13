@@ -7,7 +7,7 @@ function dlg_read_netcdf, file
 
 ncdf_list, file, vname=vars, /var, /quiet
 
-nc = orderedHash()
+nc = dictionary()
 
 nVars = n_elements(vars)
 
